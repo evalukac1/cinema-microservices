@@ -18,5 +18,20 @@ services:
       retries: 10
       start_period: 10s
 
+  movie-service:
+    build:
+      context: ./movie-service
+    image: cinema/movie-service:local
+    environment:
+      SERVER_PORT: "8081"
+      MOVIE_DB_URL: jdbc:postgresql://movie-db:5432/movie_db
+      MOVIE_DB_USERNAME: movie_user
+      MOVIE_DB_PASSWORD: movie_local_password
+    ports:
+      - "127.0.0.1:8081:8081"
+    depends_on:
+      movie-db:
+        condition: service_healthy
+
 volumes:
   movie-db-data:
