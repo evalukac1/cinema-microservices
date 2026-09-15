@@ -1,38 +1,74 @@
 package com.cinema.movie;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
 
 class MovieServiceTest {
 
-    private final MovieService movieService = new MovieService();
+    private MovieRepository repository;
+    private MovieService service;
+
+    @BeforeEach
+    void setUp() {
+        repository = mock(MovieRepository.class);
+        service = new MovieService(repository);
+    }
 
     @Test
-    void shouldReturnAvailableMovies() {
-        var movies = movieService.getMovies();
+    void shouldMapMoviesFromRepository() {
+        var movie = sampleMovie();
 
-        assertFalse(movies.isEmpty());
-        assertTrue(movies.stream()
-                .anyMatch(movie -> movie.title().equals("Inception")));
+        when(repository.findAll(Sort.by("id")))
+                .thenReturn(List.of(movie));
+
+        var result = service.getMovies();
+
+        assertEquals(
+                List.of(new MovieResponse(7L, "Inception", "SCI_FI", 148)),
+                result
+        );
     }
 
     @Test
     void shouldReturnMovieById() {
-        var result = movieService.getMovieById(1L);
+        var movie = sampleMovie();
 
-        assertTrue(result.isPresent());
+        when(repository.findById(7L))
+                .thenReturn(Optional.of(movie));
 
-        var movie = result.orElseThrow();
-        assertEquals(1L, movie.id().longValue());
-        assertEquals("Inception", movie.title());
-        assertEquals(148, movie.durationMinutes());
+        var result = service.getMovieById(7L);
+
+        assertEquals(
+                Optional.of(
+                        new MovieResponse(7L, "Inception", "SCI_FI", 148)
+                ),
+                result
+        );
     }
 
     @Test
     void shouldReturnEmptyForUnknownId() {
-        var result = movieService.getMovieById(999L);
+        when(repository.findById(999L))
+                .thenReturn(Optional.empty());
 
-        assertTrue(result.isEmpty());
+        assertTrue(service.getMovieById(999L).isEmpty());
+    }
+
+    private Movie sampleMovie() {
+        var movie = mock(Movie.class);
+
+        when(movie.getId()).thenReturn(7L);
+        when(movie.getTitle()).thenReturn("Inception");
+        when(movie.getGenre()).thenReturn("SCI_FI");
+        when(movie.getDurationMinutes()).thenReturn(148);
+
+        return movie;
     }
 }
