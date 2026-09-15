@@ -7,6 +7,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.net.URI;
+import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @RestController
 @RequestMapping("/api/movies")
@@ -30,5 +34,15 @@ public class MovieController {
         return movieService.getMovieById(id)
                 .map(movie -> ResponseEntity.ok(movie))
                 .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+    
+    @PostMapping
+    public ResponseEntity<MovieResponse> createMovie(
+            @Valid @RequestBody CreateMovieRequest request) {
+
+        var movie = movieService.createMovie(request);
+        var location = URI.create("/api/movies/" + movie.id());
+
+        return ResponseEntity.created(location).body(movie);
     }
 }

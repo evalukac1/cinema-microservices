@@ -12,6 +12,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestClient;
+import org.springframework.http.MediaType;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import(TestcontainersConfiguration.class)
@@ -100,5 +101,83 @@ class MovieApiIntegrationTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(0, response.getBody().length);
+    }
+    
+    @Test
+    void shouldCreateMovieAndMakeItAvailable() {
+        long countBefore = repository.count();
+
+        var request = new CreateMovieRequest(
+                "  Interstellar  ", "SCI_FI", 169
+        );
+
+        var response = client.post()
+                .uri("/api/movies")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(request)
+                .retrieve()
+                .toEntity(MovieResponse.class);
+
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+
+        var created = response.getBody();
+        assertNotNull(created);
+        assertNotNull(created.id());
+        assertEquals("Interstellar", created.title());
+        assertEquals("SCI_FI", created.genre());
+        assertEquals(169, created.durationMinutes());
+
+        var location = response.getHeaders().getLocation();
+        assertNotNull(location);
+        assertEquals("/api/movies/" + created.id(), location.toString());
+
+        assertEquals(countBefore + 1, repository.count());
+
+        var fetched = client.get()
+                .uri(location.toString())
+                .retrieve()
+                .body(MovieResponse.class);
+
+        assertEquals(created, fetched);
+    }
+
+    @Test
+    void shouldRejectBlankTitle() {
+        long countBefore = repository.count();
+
+        var request = new CreateMovieRequest("   ", "SCI_FI", 148);
+
+        var exception = assertThrows(
+                HttpClientErrorException.BadRequest.class,
+                () -> client.post()
+                        .uri("/api/movies")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(request)
+                        .retrieve()
+                        .toBodilessEntity()
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals(countBefore, repository.count());
+    }
+
+    @Test
+    void shouldRejectZeroDuration() {
+        long countBefore = repository.count();
+
+        var request = new CreateMovieRequest("Interstellar", "SCI_FI", 0);
+
+        var exception = assertThrows(
+                HttpClientErrorException.BadRequest.class,
+                () -> client.post()
+                        .uri("/api/movies")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(request)
+                        .retrieve()
+                        .toBodilessEntity()
+        );
+
+        assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+        assertEquals(countBefore, repository.count());
     }
 }

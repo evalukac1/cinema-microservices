@@ -36,4 +36,16 @@ public class MovieService {
                 movie.getDurationMinutes()
         );
     }
+    
+    @Transactional
+    public MovieResponse createMovie(CreateMovieRequest request) {
+        var movie = new Movie(
+                request.title().strip(),
+                request.genre().strip(),
+                request.durationMinutes()
+        );
+
+        var savedMovie = movieRepository.save(movie);
+        return toResponse(savedMovie);
+    }
 }
