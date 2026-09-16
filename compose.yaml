@@ -33,5 +33,41 @@ services:
       movie-db:
         condition: service_healthy
 
+  screening-db:
+    image: postgres:17.11
+    environment:
+      POSTGRES_DB: screening_db
+      POSTGRES_USER: screening_user
+      POSTGRES_PASSWORD: screening_local_password
+    ports:
+      - "127.0.0.1:5434:5432"
+    volumes:
+      - screening-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U screening_user -d screening_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  screening-service:
+    build:
+      context: ./screening-service
+    image: cinema/screening-service:local
+    environment:
+      SERVER_PORT: "8082"
+      SCREENING_DB_URL: jdbc:postgresql://screening-db:5432/screening_db
+      SCREENING_DB_USERNAME: screening_user
+      SCREENING_DB_PASSWORD: screening_local_password
+      MOVIE_SERVICE_URL: http://movie-service:8081
+    ports:
+      - "127.0.0.1:8082:8082"
+    depends_on:
+      screening-db:
+        condition: service_healthy
+      movie-service:
+        condition: service_started
+
 volumes:
   movie-db-data:
+  screening-db-data:
