@@ -104,7 +104,70 @@ services:
       screening-service:
         condition: service_started
 
+  reservation-db:
+    image: postgres:17.11
+    environment:
+      POSTGRES_DB: reservation_db
+      POSTGRES_USER: reservation_user
+      POSTGRES_PASSWORD: reservation_local_password
+    ports:
+      - "127.0.0.1:5436:5432"
+    volumes:
+      - reservation-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U reservation_user -d reservation_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  rabbitmq:
+    image: rabbitmq:4-management
+    environment:
+      RABBITMQ_DEFAULT_USER: cinema
+      RABBITMQ_DEFAULT_PASS: cinema_local_password
+    ports:
+      - "127.0.0.1:5672:5672"
+      - "127.0.0.1:15672:15672"
+    volumes:
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  reservation-service:
+    build:
+      context: ./reservation-service
+    image: cinema/reservation-service:local
+    environment:
+      SERVER_PORT: "8084"
+      RESERVATION_DB_URL: jdbc:postgresql://reservation-db:5432/reservation_db
+      RESERVATION_DB_USERNAME: reservation_user
+      RESERVATION_DB_PASSWORD: reservation_local_password
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: cinema
+      RABBITMQ_PASSWORD: cinema_local_password
+      SCREENING_SERVICE_URL: http://screening-service:8082
+      INVENTORY_SERVICE_URL: http://seat-inventory-service:8083
+    ports:
+      - "127.0.0.1:8084:8084"
+    depends_on:
+      reservation-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      screening-service:
+        condition: service_started
+      seat-inventory-service:
+        condition: service_started
+
 volumes:
   movie-db-data:
   screening-db-data:
   inventory-db-data:
+  reservation-db-data:
+  rabbitmq-data:
