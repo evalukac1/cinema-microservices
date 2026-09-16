@@ -68,6 +68,43 @@ services:
       movie-service:
         condition: service_started
 
+  inventory-db:
+    image: postgres:17.11
+    environment:
+      POSTGRES_DB: inventory_db
+      POSTGRES_USER: inventory_user
+      POSTGRES_PASSWORD: inventory_local_password
+    ports:
+      - "127.0.0.1:5435:5432"
+    volumes:
+      - inventory-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U inventory_user -d inventory_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  seat-inventory-service:
+    build:
+      context: ./seat-inventory-service
+    image: cinema/seat-inventory-service:local
+    environment:
+      SERVER_PORT: "8083"
+      INVENTORY_DB_URL: jdbc:postgresql://inventory-db:5432/inventory_db
+      INVENTORY_DB_USERNAME: inventory_user
+      INVENTORY_DB_PASSWORD: inventory_local_password
+      SCREENING_SERVICE_URL: http://screening-service:8082
+      INVENTORY_HOLD_DURATION: PT10M
+    ports:
+      - "127.0.0.1:8083:8083"
+    depends_on:
+      inventory-db:
+        condition: service_healthy
+      screening-service:
+        condition: service_started
+
 volumes:
   movie-db-data:
   screening-db-data:
+  inventory-db-data:
