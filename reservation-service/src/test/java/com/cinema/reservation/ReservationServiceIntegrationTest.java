@@ -1,6 +1,7 @@
 package com.cinema.reservation;
 
 import static org.junit.jupiter.api.Assertions.*;
+import org.springframework.test.context.ActiveProfiles;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -25,6 +26,7 @@ import com.cinema.reservation.ReservationModels.*;
 
 @SpringBootTest
 @Import(TestcontainersConfiguration.class)
+@ActiveProfiles("test")
 class ReservationServiceIntegrationTest {
 
     @Autowired

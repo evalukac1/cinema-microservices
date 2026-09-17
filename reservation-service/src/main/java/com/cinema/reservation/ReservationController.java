@@ -16,11 +16,15 @@ import com.cinema.reservation.ReservationModels.*;
 public class ReservationController {
 
     private final ReservationService service;
+    private final ReservationPaymentService payments;
 
-    public ReservationController(ReservationService service) {
+    public ReservationController(
+            ReservationService service,
+            ReservationPaymentService payments) {
         this.service = service;
+        this.payments = payments;
     }
-
+    
     @PostMapping
     public ResponseEntity<ReservationResponse> create(
             @Valid @RequestBody CreateReservationRequest request) {
@@ -45,5 +49,14 @@ public class ReservationController {
     @PostMapping("/{id}/cancel")
     public ReservationResponse cancel(@PathVariable("id") UUID id) {
         return service.cancel(id);
+    }
+    
+    @PostMapping("/{id}/pay")
+    public ResponseEntity<ReservationResponse> pay(
+            @PathVariable("id") UUID id,
+            @Valid @RequestBody PaymentRequest request) {
+
+        return ResponseEntity.accepted()
+                .body(payments.requestPayment(id, request));
     }
 }

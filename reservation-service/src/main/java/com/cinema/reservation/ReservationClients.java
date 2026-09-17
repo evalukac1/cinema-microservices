@@ -169,4 +169,20 @@ public class ReservationClients {
 
         return hold;
     }
+    
+    public HoldResponse confirmHold(UUID reservationId) {
+        try {
+            var hold = inventory.post()
+                    .uri("/api/inventory/holds/{id}/confirm", reservationId)
+                    .retrieve()
+                    .body(HoldResponse.class);
+
+            return validateHold(hold, reservationId);
+        } catch (HttpClientErrorException.Conflict exception) {
+            // Proveravamo da li je čuvanje sedišta isteklo ili otkazano.
+            return getHold(reservationId);
+        } catch (RestClientException exception) {
+            throw unavailable();
+        }
+    }
 }

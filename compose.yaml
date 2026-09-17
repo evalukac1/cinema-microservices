@@ -165,9 +165,48 @@ services:
       seat-inventory-service:
         condition: service_started
 
+  payment-db:
+    image: postgres:17.11
+    environment:
+      POSTGRES_DB: payment_db
+      POSTGRES_USER: payment_user
+      POSTGRES_PASSWORD: payment_local_password
+    ports:
+      - "127.0.0.1:5437:5432"
+    volumes:
+      - payment-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U payment_user -d payment_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  payment-service:
+    build:
+      context: ./payment-service
+    image: cinema/payment-service:local
+    environment:
+      SERVER_PORT: "8085"
+      PAYMENT_DB_URL: jdbc:postgresql://payment-db:5432/payment_db
+      PAYMENT_DB_USERNAME: payment_user
+      PAYMENT_DB_PASSWORD: payment_local_password
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: "5672"
+      RABBITMQ_USERNAME: cinema
+      RABBITMQ_PASSWORD: cinema_local_password
+    ports:
+      - "127.0.0.1:8085:8085"
+    depends_on:
+      payment-db:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
 volumes:
   movie-db-data:
   screening-db-data:
   inventory-db-data:
   reservation-db-data:
   rabbitmq-data:
+  payment-db-data:

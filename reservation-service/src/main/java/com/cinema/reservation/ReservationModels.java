@@ -66,4 +66,31 @@ public final class ReservationModels {
             Instant expiresAt
     ) {
     }
+    
+    public record PaymentRequest(
+            @NotNull Boolean simulateFailure
+    ) {
+    }
+
+    public record PaymentRequested(
+            UUID eventId,
+            UUID reservationId,
+            BigDecimal amount,
+            String currency,
+            Instant expiresAt,
+            Boolean simulateFailure
+    ) {
+    }
+    
+    public record PaymentResult(
+            @NotNull UUID eventId,
+            @NotNull UUID paymentId,
+            @NotNull UUID reservationId,
+            @NotNull @DecimalMin("0.01")
+            @Digits(integer = 10, fraction = 2) BigDecimal amount,
+            @NotBlank @Pattern(regexp = "[A-Z]{3}") String currency,
+            @NotBlank @Pattern(regexp = "SUCCEEDED|FAILED") String status,
+            @Size(max = 250) String failureReason
+    ) {
+    }
 }
