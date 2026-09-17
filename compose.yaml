@@ -203,6 +203,31 @@ services:
       rabbitmq:
         condition: service_healthy
 
+  api-gateway:
+    build:
+      context: ./api-gateway
+    image: cinema/api-gateway:local
+    environment:
+      SERVER_PORT: "8080"
+      MOVIE_SERVICE_URL: http://movie-service:8081
+      SCREENING_SERVICE_URL: http://screening-service:8082
+      INVENTORY_SERVICE_URL: http://seat-inventory-service:8083
+      RESERVATION_SERVICE_URL: http://reservation-service:8084
+      PAYMENT_SERVICE_URL: http://payment-service:8085
+    ports:
+      - "127.0.0.1:8080:8080"
+    depends_on:
+      movie-service:
+        condition: service_started
+      screening-service:
+        condition: service_started
+      seat-inventory-service:
+        condition: service_started
+      reservation-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+
 volumes:
   movie-db-data:
   screening-db-data:
