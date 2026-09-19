@@ -22,16 +22,25 @@ services:
     build:
       context: ./movie-service
     image: cinema/movie-service:local
+    restart: on-failure
     environment:
       SERVER_PORT: "8081"
       MOVIE_DB_URL: jdbc:postgresql://movie-db:5432/movie_db
       MOVIE_DB_USERNAME: movie_user
       MOVIE_DB_PASSWORD: movie_local_password
+      EUREKA_ENABLED: "true"
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
     ports:
       - "127.0.0.1:8081:8081"
     depends_on:
       movie-db:
         condition: service_healthy
+      discovery-server:
+        condition: service_started
+      config-server:
+        condition: service_started
 
   screening-db:
     image: postgres:17.11
@@ -54,18 +63,27 @@ services:
     build:
       context: ./screening-service
     image: cinema/screening-service:local
+    restart: on-failure
     environment:
       SERVER_PORT: "8082"
       SCREENING_DB_URL: jdbc:postgresql://screening-db:5432/screening_db
       SCREENING_DB_USERNAME: screening_user
       SCREENING_DB_PASSWORD: screening_local_password
       MOVIE_SERVICE_URL: http://movie-service:8081
+      EUREKA_ENABLED: "true"
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
     ports:
       - "127.0.0.1:8082:8082"
     depends_on:
       screening-db:
         condition: service_healthy
       movie-service:
+        condition: service_started
+      discovery-server:
+        condition: service_started
+      config-server:
         condition: service_started
 
   inventory-db:
@@ -89,6 +107,7 @@ services:
     build:
       context: ./seat-inventory-service
     image: cinema/seat-inventory-service:local
+    restart: on-failure
     environment:
       SERVER_PORT: "8083"
       INVENTORY_DB_URL: jdbc:postgresql://inventory-db:5432/inventory_db
@@ -96,12 +115,20 @@ services:
       INVENTORY_DB_PASSWORD: inventory_local_password
       SCREENING_SERVICE_URL: http://screening-service:8082
       INVENTORY_HOLD_DURATION: PT10M
+      EUREKA_ENABLED: "true"
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
     ports:
       - "127.0.0.1:8083:8083"
     depends_on:
       inventory-db:
         condition: service_healthy
       screening-service:
+        condition: service_started
+      discovery-server:
+        condition: service_started
+      config-server:
         condition: service_started
 
   reservation-db:
@@ -142,6 +169,7 @@ services:
     build:
       context: ./reservation-service
     image: cinema/reservation-service:local
+    restart: on-failure
     environment:
       SERVER_PORT: "8084"
       RESERVATION_DB_URL: jdbc:postgresql://reservation-db:5432/reservation_db
@@ -153,6 +181,10 @@ services:
       RABBITMQ_PASSWORD: cinema_local_password
       SCREENING_SERVICE_URL: http://screening-service:8082
       INVENTORY_SERVICE_URL: http://seat-inventory-service:8083
+      EUREKA_ENABLED: "true"
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
     ports:
       - "127.0.0.1:8084:8084"
     depends_on:
@@ -163,6 +195,10 @@ services:
       screening-service:
         condition: service_started
       seat-inventory-service:
+        condition: service_started
+      discovery-server:
+        condition: service_started
+      config-server:
         condition: service_started
 
   payment-db:
@@ -186,6 +222,7 @@ services:
     build:
       context: ./payment-service
     image: cinema/payment-service:local
+    restart: on-failure
     environment:
       SERVER_PORT: "8085"
       PAYMENT_DB_URL: jdbc:postgresql://payment-db:5432/payment_db
@@ -195,6 +232,10 @@ services:
       RABBITMQ_PORT: "5672"
       RABBITMQ_USERNAME: cinema
       RABBITMQ_PASSWORD: cinema_local_password
+      EUREKA_ENABLED: "true"
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
     ports:
       - "127.0.0.1:8085:8085"
     depends_on:
@@ -202,18 +243,22 @@ services:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
+      discovery-server:
+        condition: service_started
+      config-server:
+        condition: service_started
 
   api-gateway:
     build:
       context: ./api-gateway
     image: cinema/api-gateway:local
+    restart: on-failure
     environment:
       SERVER_PORT: "8080"
-      MOVIE_SERVICE_URL: http://movie-service:8081
-      SCREENING_SERVICE_URL: http://screening-service:8082
-      INVENTORY_SERVICE_URL: http://seat-inventory-service:8083
-      RESERVATION_SERVICE_URL: http://reservation-service:8084
-      PAYMENT_SERVICE_URL: http://payment-service:8085
+      EUREKA_ENABLED: "true"
+      EUREKA_URL: http://discovery-server:8761/eureka/
+      SPRING_CLOUD_CONFIG_ENABLED: "true"
+      SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
     ports:
       - "127.0.0.1:8080:8080"
     depends_on:
@@ -227,6 +272,32 @@ services:
         condition: service_started
       payment-service:
         condition: service_started
+      discovery-server:
+        condition: service_started
+      config-server:
+        condition: service_started
+
+  discovery-server:
+    build:
+      context: ./discovery-server
+    image: cinema/discovery-server:local
+    environment:
+      SERVER_PORT: "8761"
+      EUREKA_HOSTNAME: discovery-server
+    ports:
+      - "127.0.0.1:8761:8761"
+
+  config-server:
+    build:
+      context: ./config-server
+    image: cinema/config-server:local
+    environment:
+      SERVER_PORT: "8888"
+      CONFIG_REPO_LOCATION: file:/config-repo/
+    ports:
+      - "127.0.0.1:8888:8888"
+    volumes:
+      - ./config-repo:/config-repo:ro
 
 volumes:
   movie-db-data:
