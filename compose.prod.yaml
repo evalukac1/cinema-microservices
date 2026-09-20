@@ -1,0 +1,88 @@
+services:
+  movie-db:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${MOVIE_DB_PASSWORD:?Required}
+
+  screening-db:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${SCREENING_DB_PASSWORD:?Required}
+
+  inventory-db:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${INVENTORY_DB_PASSWORD:?Required}
+
+  reservation-db:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${RESERVATION_DB_PASSWORD:?Required}
+
+  payment-db:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      POSTGRES_PASSWORD: ${PAYMENT_DB_PASSWORD:?Required}
+
+  rabbitmq:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:?Required}
+
+  movie-service:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MOVIE_DB_PASSWORD: ${MOVIE_DB_PASSWORD:?Required}
+
+  screening-service:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SCREENING_DB_PASSWORD: ${SCREENING_DB_PASSWORD:?Required}
+
+  seat-inventory-service:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      INVENTORY_DB_PASSWORD: ${INVENTORY_DB_PASSWORD:?Required}
+
+  reservation-service:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      RESERVATION_DB_PASSWORD: ${RESERVATION_DB_PASSWORD:?Required}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Required}
+
+  payment-service:
+    restart: unless-stopped
+    ports: !reset []
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      PAYMENT_DB_PASSWORD: ${PAYMENT_DB_PASSWORD:?Required}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:?Required}
+
+  api-gateway:
+    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      CINEMA_ADMIN_USERNAME: admin
+      CINEMA_ADMIN_PASSWORD: ${CINEMA_ADMIN_PASSWORD:?Required}
+
+  discovery-server:
+    restart: unless-stopped
+    ports: !reset []
+
+  config-server:
+    restart: unless-stopped
+    ports: !reset []

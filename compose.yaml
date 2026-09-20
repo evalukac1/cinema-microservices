@@ -32,8 +32,6 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       SPRING_CLOUD_CONFIG_ENABLED: "true"
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-    ports:
-      - "127.0.0.1:8081:8081"
     depends_on:
       movie-db:
         condition: service_healthy
@@ -74,8 +72,6 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       SPRING_CLOUD_CONFIG_ENABLED: "true"
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-    ports:
-      - "127.0.0.1:8082:8082"
     depends_on:
       screening-db:
         condition: service_healthy
@@ -119,8 +115,6 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       SPRING_CLOUD_CONFIG_ENABLED: "true"
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-    ports:
-      - "127.0.0.1:8083:8083"
     depends_on:
       inventory-db:
         condition: service_healthy
@@ -185,8 +179,6 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       SPRING_CLOUD_CONFIG_ENABLED: "true"
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-    ports:
-      - "127.0.0.1:8084:8084"
     depends_on:
       reservation-db:
         condition: service_healthy
@@ -236,8 +228,6 @@ services:
       EUREKA_URL: http://discovery-server:8761/eureka/
       SPRING_CLOUD_CONFIG_ENABLED: "true"
       SPRING_CONFIG_IMPORT: "configserver:http://config-server:8888"
-    ports:
-      - "127.0.0.1:8085:8085"
     depends_on:
       payment-db:
         condition: service_healthy
