@@ -158,10 +158,6 @@ Pre ponavljanja takvog zahteva treba proveriti postojeći rezultat.
 - Compose verzija koja podržava `!reset` u override fajlovima;
   preporučena je verzija 2.24.4 ili novija.
 - Git.
-- Internet za prvo preuzimanje Maven zavisnosti i Docker slika.
-
-Posebna instalacija Maven-a nije potrebna.
-Prvo pokretanje testova i sistema može potrajati nekoliko minuta.
 
 ## Preuzimanje i razvojni pipeline
 
@@ -171,9 +167,8 @@ cd cinema-microservices
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\pipeline.ps1 -Action All
 ```
 
-Za privatan repozitorijum potreban je odobren GitHub pristup.
-
 `All` redom:
+
 1. Izvršava `clean verify` za svih osam Java projekata.
 2. Proverava Compose konfiguraciju.
 3. Pravi Docker slike iz testiranih JAR fajlova.
@@ -201,6 +196,26 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\pipeline.ps1 -
 `Deploy` ne kompajlira izvorni kod: nakon izmene Java koda prvo koristiti
 `Build` ili kompletnu akciju `All`.
 
+## Automatski CI — GitHub Actions
+
+Workflow `.github/workflows/ci.yml` pokreće se pri svakom push-u
+i pull request-u na `main`, a može se pokrenuti i ručno kroz karticu Actions.
+
+Na GitHub Linux runnerima, za svih osam Java projekata izvršava:
+
+- Maven `clean verify` sa Javom 21;
+- testove, uključujući Testcontainers;
+- pravljenje Docker slike nakon uspešnih testova;
+- čuvanje dostupnih izveštaja testova tokom sedam dana.
+
+Svaki projekat proverava se u zasebnom poslu.
+Rezultati i izveštaji dostupni su u kartici Actions.
+
+CI ne objavljuje Docker slike, ne izvršava produkcijski deploy
+i ne pokreće smoke test celog sistema.
+Lokalni pipeline i produkcijski deploy ostaju dostupni kroz
+postojeće PowerShell skripte.
+
 ## Razvojne adrese
 
 | Adresa | Namena |
@@ -211,10 +226,12 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\scripts\pipeline.ps1 -
 | http://localhost:15672 | RabbitMQ konzola |
 
 Razvojni administrator:
+
 - Korisničko ime: `admin`
 - Lozinka: `cinema_local_admin_password`
 
 Razvojni RabbitMQ:
+
 - Korisničko ime: `cinema`
 - Lozinka: `cinema_local_password`
 
@@ -257,6 +274,7 @@ Ostale navedene poslovne operacije zahtevaju administratorsku prijavu.
 ## Produkcijska konfiguracija
 
 Produkcijska konfiguracija koristi:
+
 - `compose.yaml` i `compose.prod.yaml`;
 - zaseban Compose projekat `cinema-prod`;
 - zasebne baze, volumene i mrežu;
@@ -323,6 +341,7 @@ podaci odgovarajućeg okruženja.
 ## Testiranje
 
 Automatizovane provere uključuju:
+
 - unit testove poslovne logike sa Mockito zavisnostima;
 - integracione testove sa zasebnim PostgreSQL Testcontainers bazama;
 - API validaciju, nepostojeće resurse i kreiranje podataka;
@@ -333,6 +352,7 @@ Automatizovane provere uključuju:
 - autentifikaciju i pristup na Gateway-u.
 
 Smoke test prolazi kroz ceo pokrenuti sistem, uključujući RabbitMQ:
+
 1. Kreira novi film, salu i buduću projekciju.
 2. Proverava ponovljen zahtev za istu rezervaciju.
 3. Plaća i proverava potvrđenu rezervaciju i sedišta.
@@ -386,7 +406,9 @@ logove. Ne treba automatski ponavljati sve Maven buildove.
 - Centralna konfiguracija učitava se pri pokretanju; nije uveden
   automatski refresh svih servisa.
 - Nema zasebnog ticket servisa, frontend-a ni opcionalnog monitoringa.
-- Pipeline je implementiran PowerShell skriptama, bez posebne CI/CD platforme.
+- GitHub Actions automatski izvršava build, testove i proveru pravljenja
+  Docker slika pri push-u i pull request-u na main granu.
+  Lokalni pipeline i produkcijski deploy pokreću se PowerShell skriptama.
 - GitHub čuva kod i konfiguraciju, ali ne podatke Docker volumena.
 
 ## Polazni resursi
