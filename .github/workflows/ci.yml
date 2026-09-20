@@ -1,0 +1,76 @@
+name: Cinema CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: cinema-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build and test - ${{ matrix.service }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        service:
+          - config-server
+          - discovery-server
+          - movie-service
+          - screening-service
+          - seat-inventory-service
+          - reservation-service
+          - payment-service
+          - api-gateway
+
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ matrix.service }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: maven
+          cache-dependency-path: |
+            **/pom.xml
+            **/.mvn/wrapper/maven-wrapper.properties
+
+      - name: Check Docker
+        run: docker info
+
+      - name: Build and run tests
+        run: bash ./mvnw --batch-mode --no-transfer-progress clean verify
+
+      - name: Build Docker image
+        run: docker build --tag cinema/${{ matrix.service }}:ci .
+
+      - name: Upload test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.service }}
+          path: |
+            ${{ matrix.service }}/target/surefire-reports/
+            ${{ matrix.service }}/target/failsafe-reports/
+          if-no-files-found: ignore
+          retention-days: 7
